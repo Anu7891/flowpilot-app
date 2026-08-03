@@ -1,5 +1,5 @@
-import FlowApp from '@/components/FlowApp';
+import LoginForm from '@/components/auth/LoginForm';
 
 export default function Page() {
-  return <FlowApp initial="s-login" />;
+  return <LoginForm />;
 }
