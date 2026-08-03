@@ -1,35 +1,41 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { get, post, type Project } from '../api';
+import { useProjects, useCreateProject } from '../hooks';
 import { Icon, useToast } from '../ui';
 
 export default function ProjectsPage({ slug }: { slug: string }) {
   const router = useRouter();
   const toast = useToast();
-  const [projects, setProjects] = useState<Project[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const projectsQuery = useProjects(slug);
+  const createMut = useCreateProject(slug);
+
+  const projects = projectsQuery.data ?? null;
+  const error = projectsQuery.isError
+    ? projectsQuery.error instanceof Error ? projectsQuery.error.message : 'Could not load projects.'
+    : null;
+
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
   const [desc, setDesc] = useState('');
-  const [saving, setSaving] = useState(false);
+  const saving = createMut.isPending;
 
-  useEffect(() => {
-    get<Project[]>(`/workspaces/${slug}/projects`).then(setProjects).catch((e) => setError(e.message ?? 'Could not load projects.'));
-  }, [slug]);
-
-  async function create(e: React.FormEvent) {
+  function create(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    try {
-      const p = await post<Project>(`/workspaces/${slug}/projects`, { name, description: desc || undefined, icon: icon.trim() || undefined });
-      setCreating(false); setName(''); setIcon(''); setDesc('');
-      toast({ msg: 'Project created.' });
-      router.push(`/w/${slug}/projects/${p.id}`);
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not create project.', err: true });
-    } finally { setSaving(false); }
+    createMut.mutate(
+      { name, description: desc || undefined, icon: icon.trim() || undefined },
+      {
+        onSuccess: (p) => {
+          setCreating(false); setName(''); setIcon(''); setDesc('');
+          toast({ msg: 'Project created.' });
+          router.push(`/w/${slug}/projects/${p.id}`);
+        },
+        onError: (err) => {
+          toast({ msg: err instanceof Error ? err.message : 'Could not create project.', err: true });
+        },
+      },
+    );
   }
 
   return (

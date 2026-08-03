@@ -79,7 +79,7 @@ export function useTasks(projectId: string) {
 export function useCreateProject(slug: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; icon?: string }) =>
+    mutationFn: (input: { name: string; icon?: string; description?: string }) =>
       post<Project>(`/workspaces/${slug}/projects`, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.projects(slug) });
