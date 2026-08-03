@@ -15,6 +15,7 @@ import type {
   WorkspaceSummary,
   Member,
   Project,
+  Task,
   Role,
 } from './api';
 
@@ -56,6 +57,21 @@ export function useMembers(slug: string) {
   return useQuery({
     queryKey: qk.members(slug),
     queryFn: () => get<Member[]>(`/workspaces/${slug}/members`),
+  });
+}
+
+export function useProject(projectId: string) {
+  return useQuery({
+    queryKey: qk.project(projectId),
+    queryFn: () => get<Project>(`/projects/${projectId}`),
+  });
+}
+
+/** Board tasks — high limit so the whole board loads in one query, grouped client-side. */
+export function useTasks(projectId: string) {
+  return useQuery({
+    queryKey: qk.tasks(projectId),
+    queryFn: () => get<Task[]>(`/projects/${projectId}/tasks?limit=200`),
   });
 }
 
