@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { patch, type Role, type WorkspaceSummary } from '../api';
+import { type Role, type WorkspaceSummary } from '../api';
+import { useUpdateWorkspace } from '../hooks';
 import { Icon, initials, useToast } from '../ui';
 
 type WS = WorkspaceSummary & { role: Role };
@@ -8,28 +9,27 @@ const SWATCHES = ['#4650C7', '#12A38A', '#B26205', '#C13539', '#7681E1', '#0F8A7
 
 export default function GeneralTab({ ws, canEdit, onSaved }: { ws: WS; canEdit: boolean; onSaved: (w: WS) => void }) {
   const toast = useToast();
+  const updateMut = useUpdateWorkspace(ws.slug);
   const [name, setName] = useState(ws.name);
   const [slug, setSlug] = useState(ws.slug);
   const [color, setColor] = useState(ws.color ?? '#4650C7');
   const [icon, setIcon] = useState(ws.icon ?? '');
-  const [saving, setSaving] = useState(false);
+  const saving = updateMut.isPending;
 
   const dirty = name !== ws.name || slug !== ws.slug || color !== (ws.color ?? '#4650C7') || icon !== (ws.icon ?? '');
 
-  async function save() {
-    setSaving(true);
-    try {
-      const updated = await patch<WS>(`/workspaces/${ws.slug}`, {
-        name, slug, color, icon: icon.trim() || null,
-      });
-      onSaved({ ...ws, ...updated });
-      toast({ msg: 'Workspace updated.' });
-      if (updated.slug !== ws.slug) window.history.replaceState(null, '', `/w/${updated.slug}/settings`);
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not save.', err: true });
-    } finally {
-      setSaving(false);
-    }
+  function save() {
+    updateMut.mutate(
+      { name, slug, color, icon: icon.trim() || null },
+      {
+        onSuccess: (updated) => {
+          onSaved({ ...ws, ...updated });
+          toast({ msg: 'Workspace updated.' });
+          if (updated.slug !== ws.slug) window.history.replaceState(null, '', `/w/${updated.slug}/settings`);
+        },
+        onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not save.', err: true }),
+      },
+    );
   }
 
   return (

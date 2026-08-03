@@ -1,19 +1,26 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
-import { get, patch, del, type Member, type Role } from '../api';
+import { useMemo, useState } from 'react';
+import { type Member, type Role } from '../api';
+import { useMembers, useChangeMemberRole, useRemoveMember } from '../hooks';
 import { Icon, initials, timeAgo, fmtDate, useToast } from '../ui';
 
 const ASSIGNABLE: Role[] = ['ADMIN', 'MEMBER', 'GUEST'];
 
 export default function MembersTab({ slug, myRole }: { slug: string; myRole: Role }) {
   const toast = useToast();
-  const [members, setMembers] = useState<Member[] | null>(null);
+  const membersQuery = useMembers(slug);
+  const members = membersQuery.isError ? [] : membersQuery.data ?? null;
+  const changeRoleMut = useChangeMemberRole(slug);
+  const removeMut = useRemoveMember(slug);
   const [q, setQ] = useState('');
   const [roleFilter, setRoleFilter] = useState<'' | Role>('');
-  const [busy, setBusy] = useState<string | null>(null);
+  // Which member row is mid-request — drives per-row disabled/spinner state.
+  const busy = changeRoleMut.isPending
+    ? changeRoleMut.variables.userId
+    : removeMut.isPending
+      ? removeMut.variables
+      : null;
   const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
-
-  useEffect(() => { get<Member[]>(`/workspaces/${slug}/members`).then(setMembers).catch(() => setMembers([])); }, [slug]);
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -22,31 +29,21 @@ export default function MembersTab({ slug, myRole }: { slug: string; myRole: Rol
       (!term || m.user.name.toLowerCase().includes(term) || m.user.email.toLowerCase().includes(term)));
   }, [members, q, roleFilter]);
 
-  async function changeRole(m: Member, role: Role) {
-    setBusy(m.user.id);
-    try {
-      const updated = await patch<Member>(`/workspaces/${slug}/members/${m.user.id}`, { role });
-      setMembers((prev) => prev?.map((x) => (x.user.id === m.user.id ? { ...x, role: updated.role } : x)) ?? null);
-      toast({ msg: `${m.user.name} is now ${role.toLowerCase()}.` });
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not change role.', err: true });
-    } finally {
-      setBusy(null);
-    }
+  function changeRole(m: Member, role: Role) {
+    changeRoleMut.mutate(
+      { userId: m.user.id, role },
+      {
+        onSuccess: () => toast({ msg: `${m.user.name} is now ${role.toLowerCase()}.` }),
+        onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not change role.', err: true }),
+      },
+    );
   }
 
-  async function remove(m: Member) {
-    setBusy(m.user.id);
-    try {
-      await del(`/workspaces/${slug}/members/${m.user.id}`);
-      setMembers((prev) => prev?.filter((x) => x.user.id !== m.user.id) ?? null);
-      toast({ msg: `${m.user.name} removed.` });
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not remove member.', err: true });
-    } finally {
-      setBusy(null);
-      setConfirmRemove(null);
-    }
+  function remove(m: Member) {
+    removeMut.mutate(m.user.id, {
+      onSuccess: () => { toast({ msg: `${m.user.name} removed.` }); setConfirmRemove(null); },
+      onError: (e) => { toast({ msg: e instanceof Error ? e.message : 'Could not remove member.', err: true }); setConfirmRemove(null); },
+    });
   }
 
   return (

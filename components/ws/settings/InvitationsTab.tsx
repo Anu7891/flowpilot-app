@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { get, post, del, type Invitation, type Role } from '../api';
+import { useState } from 'react';
+import { type Invitation, type Role } from '../api';
+import { useInvitations, useCreateInvite, useResendInvite, useRevokeInvite } from '../hooks';
 import { Icon, fmtDate, useToast } from '../ui';
 
 const STATUS_VARIANT: Record<string, string> = {
@@ -9,54 +10,49 @@ const STATUS_VARIANT: Record<string, string> = {
 
 export default function InvitationsTab({ slug }: { slug: string }) {
   const toast = useToast();
-  const [invites, setInvites] = useState<Invitation[] | null>(null);
+  const invitesQuery = useInvitations(slug);
+  const invites = invitesQuery.isError ? [] : invitesQuery.data ?? null;
+  const createMut = useCreateInvite(slug);
+  const resendMut = useResendInvite(slug);
+  const revokeMut = useRevokeInvite(slug);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('MEMBER');
-  const [sending, setSending] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  function load() { get<Invitation[]>(`/workspaces/${slug}/invitations`).then(setInvites).catch(() => setInvites([])); }
-  useEffect(load, [slug]);
-
-  function fullLink(token: string) { return `${window.location.origin}/invite/${token}`; }
+  const sending = createMut.isPending;
+  // Row-level busy id: whichever invitation is mid resend/revoke.
+  const busy = resendMut.isPending ? resendMut.variables : revokeMut.isPending ? revokeMut.variables : null;
 
   async function copy(url: string) {
     try { await navigator.clipboard.writeText(url); toast({ msg: 'Invite link copied.' }); }
     catch { toast({ msg: 'Copy failed — select and copy manually.', err: true }); }
   }
 
-  async function send(e: React.FormEvent) {
+  function send(e: React.FormEvent) {
     e.preventDefault();
-    setSending(true);
-    try {
-      const res = await post<{ invitation: Invitation; inviteUrl: string }>(`/workspaces/${slug}/invitations`, { email, role });
-      setEmail('');
-      load();
-      await copy(`${window.location.origin}${res.inviteUrl}`);
-      toast({ msg: `Invite created for ${res.invitation.email}. Link copied.` });
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not create invitation.', err: true });
-    } finally {
-      setSending(false);
-    }
+    createMut.mutate(
+      { email, role },
+      {
+        onSuccess: async (res) => {
+          setEmail('');
+          await copy(`${window.location.origin}${res.inviteUrl}`);
+          toast({ msg: `Invite created for ${res.invitation.email}. Link copied.` });
+        },
+        onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not create invitation.', err: true }),
+      },
+    );
   }
 
-  async function resend(inv: Invitation) {
-    setBusy(inv.id);
-    try {
-      const res = await post<{ invitation: Invitation; inviteUrl: string }>(`/workspaces/${slug}/invitations/${inv.id}/resend`);
-      load();
-      await copy(`${window.location.origin}${res.inviteUrl}`);
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not resend.', err: true });
-    } finally { setBusy(null); }
+  function resend(inv: Invitation) {
+    resendMut.mutate(inv.id, {
+      onSuccess: (res) => copy(`${window.location.origin}${res.inviteUrl}`),
+      onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not resend.', err: true }),
+    });
   }
 
-  async function revoke(inv: Invitation) {
-    setBusy(inv.id);
-    try { await del(`/workspaces/${slug}/invitations/${inv.id}`); load(); toast({ msg: 'Invitation revoked.' }); }
-    catch (e: any) { toast({ msg: e.message ?? 'Could not revoke.', err: true }); }
-    finally { setBusy(null); }
+  function revoke(inv: Invitation) {
+    revokeMut.mutate(inv.id, {
+      onSuccess: () => toast({ msg: 'Invitation revoked.' }),
+      onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not revoke.', err: true }),
+    });
   }
 
   return (

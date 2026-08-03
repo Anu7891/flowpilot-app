@@ -17,14 +17,19 @@ import type {
   Project,
   Task,
   Role,
+  Invitation,
+  Settings,
 } from './api';
 
 /** Centralized, hierarchical query keys — invalidate a whole subtree by prefix. */
 export const qk = {
   session: ['session'] as const,
+  workspaces: ['workspaces'] as const,
   workspace: (slug: string) => ['workspace', slug] as const,
   projects: (slug: string) => ['workspace', slug, 'projects'] as const,
   members: (slug: string) => ['workspace', slug, 'members'] as const,
+  invitations: (slug: string) => ['workspace', slug, 'invitations'] as const,
+  settings: (slug: string) => ['workspace', slug, 'settings'] as const,
   project: (projectId: string) => ['project', projectId] as const,
   tasks: (projectId: string) => ['project', projectId, 'tasks'] as const,
 };
@@ -102,6 +107,100 @@ export function useCreateProject(slug: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.projects(slug) });
     },
+  });
+}
+
+// ---- Members ----
+export function useChangeMemberRole(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: Role }) =>
+      patch<Member>(`/workspaces/${slug}/members/${userId}`, { role }),
+    onSuccess: (updated) => {
+      qc.setQueryData<Member[]>(qk.members(slug), (old) =>
+        old?.map((m) => (m.user.id === updated.user.id ? { ...m, role: updated.role } : m)) ?? old,
+      );
+    },
+  });
+}
+
+export function useRemoveMember(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => del(`/workspaces/${slug}/members/${userId}`),
+    onSuccess: (_r, userId) => {
+      qc.setQueryData<Member[]>(qk.members(slug), (old) => old?.filter((m) => m.user.id !== userId) ?? old);
+    },
+  });
+}
+
+// ---- Invitations ----
+type InviteResult = { invitation: Invitation; inviteUrl: string };
+
+export function useInvitations(slug: string) {
+  return useQuery({
+    queryKey: qk.invitations(slug),
+    queryFn: () => get<Invitation[]>(`/workspaces/${slug}/invitations`),
+  });
+}
+
+export function useCreateInvite(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { email: string; role: Role }) =>
+      post<InviteResult>(`/workspaces/${slug}/invitations`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.invitations(slug) }),
+  });
+}
+
+export function useResendInvite(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => post<InviteResult>(`/workspaces/${slug}/invitations/${id}/resend`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.invitations(slug) }),
+  });
+}
+
+export function useRevokeInvite(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => del(`/workspaces/${slug}/invitations/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.invitations(slug) }),
+  });
+}
+
+// ---- Settings ----
+export function useSettings(slug: string) {
+  return useQuery({
+    queryKey: qk.settings(slug),
+    queryFn: () => get<Settings>(`/workspaces/${slug}/settings`),
+  });
+}
+
+export function useSaveSettings(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Partial<Settings>) => patch<Settings>(`/workspaces/${slug}/settings`, input),
+    onSuccess: (updated) => qc.setQueryData(qk.settings(slug), updated),
+  });
+}
+
+// ---- Workspace update / delete (General + Danger tabs) ----
+export function useUpdateWorkspace(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Record<string, unknown>) => patch<WorkspaceDetail>(`/workspaces/${slug}`, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.workspaces });
+    },
+  });
+}
+
+export function useDeleteWorkspace(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => del(`/workspaces/${slug}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.workspaces }),
   });
 }
 

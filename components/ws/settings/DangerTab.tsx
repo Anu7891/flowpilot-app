@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { patch, del, type Role, type WorkspaceSummary } from '../api';
+import { type Role, type WorkspaceSummary } from '../api';
+import { useUpdateWorkspace, useDeleteWorkspace } from '../hooks';
 import { useToast } from '../ui';
 
 type WS = WorkspaceSummary & { role: Role };
@@ -9,32 +10,31 @@ type WS = WorkspaceSummary & { role: Role };
 export default function DangerTab({ ws, isOwner, onArchived }: { ws: WS; isOwner: boolean; onArchived: (w: WS) => void }) {
   const router = useRouter();
   const toast = useToast();
-  const [busy, setBusy] = useState<'archive' | 'delete' | null>(null);
+  const updateMut = useUpdateWorkspace(ws.slug);
+  const deleteMut = useDeleteWorkspace(ws.slug);
+  const busy: 'archive' | 'delete' | null = updateMut.isPending ? 'archive' : deleteMut.isPending ? 'delete' : null;
   const [showDelete, setShowDelete] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const archived = !!ws.archivedAt;
 
-  async function toggleArchive() {
-    setBusy('archive');
-    try {
-      const updated = await patch<WS>(`/workspaces/${ws.slug}`, { archived: !archived });
-      onArchived({ ...ws, ...updated });
-      toast({ msg: archived ? 'Workspace unarchived.' : 'Workspace archived.' });
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not update.', err: true });
-    } finally { setBusy(null); }
+  function toggleArchive() {
+    updateMut.mutate(
+      { archived: !archived },
+      {
+        onSuccess: (updated) => {
+          onArchived({ ...ws, ...updated });
+          toast({ msg: archived ? 'Workspace unarchived.' : 'Workspace archived.' });
+        },
+        onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not update.', err: true }),
+      },
+    );
   }
 
-  async function doDelete() {
-    setBusy('delete');
-    try {
-      await del(`/workspaces/${ws.slug}`);
-      toast({ msg: 'Workspace deleted.' });
-      router.push('/dashboard');
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not delete.', err: true });
-      setBusy(null);
-    }
+  function doDelete() {
+    deleteMut.mutate(undefined, {
+      onSuccess: () => { toast({ msg: 'Workspace deleted.' }); router.push('/dashboard'); },
+      onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not delete.', err: true }),
+    });
   }
 
   return (
