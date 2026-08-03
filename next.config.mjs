@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Strict mode off for now: the ported prototype pages attach DOM listeners
-  // in useEffect; double-invoke in dev makes that noisy. Turn back on once
-  // FlowApp is split into stateful components.
-  reactStrictMode: false,
+  // FlowApp prototype has been split into stateful components (no more raw DOM
+  // listeners in useEffect), so StrictMode's dev double-invoke is safe again.
+  reactStrictMode: true,
 };
 export default nextConfig;

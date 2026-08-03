@@ -1,5 +1,5 @@
-import FlowApp from '@/components/FlowApp';
+import VerifyEmail from '@/components/auth/VerifyEmail';
 
 export default function Page() {
-  return <FlowApp initial="s-verify" />;
+  return <VerifyEmail />;
 }

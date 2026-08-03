@@ -1,5 +1,5 @@
-import FlowApp from '@/components/FlowApp';
+import WelcomeScreen from '@/components/auth/WelcomeScreen';
 
 export default function Page() {
-  return <FlowApp initial="s-welcome" />;
+  return <WelcomeScreen />;
 }
