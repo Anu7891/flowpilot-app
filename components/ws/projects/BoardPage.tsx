@@ -1,7 +1,9 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { get, post, patch, TASK_STATUSES, type Project, type Task, type TaskStatus, type Member } from '../api';
+import { useQueryClient } from '@tanstack/react-query';
+import { patch, post, TASK_STATUSES, type Task, type TaskStatus } from '../api';
+import { qk, useProject, useTasks, useMembers } from '../hooks';
 import { Icon, initials, useToast } from '../ui';
 import { PriorityPill, DueLabel, pos } from './shared';
 import TaskPanel from './TaskPanel';
@@ -12,34 +14,42 @@ type View = 'board' | 'list';
 export default function BoardPage({ slug, projectId }: { slug: string; projectId: string }) {
   const router = useRouter();
   const toast = useToast();
-  const [project, setProject] = useState<Project | null>(null);
-  const [tasks, setTasks] = useState<Task[] | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+
+  const projectQuery = useProject(projectId);
+  const tasksQuery = useTasks(projectId);
+  const membersQuery = useMembers(slug);
+
+  const project = projectQuery.data ?? null;
+  const tasks = tasksQuery.data ?? null;
+  const members = membersQuery.data ?? [];
+  const error = projectQuery.isError || tasksQuery.isError
+    ? (projectQuery.error ?? tasksQuery.error) instanceof Error
+      ? (projectQuery.error ?? tasksQuery.error)!.message
+      : 'Could not load board.'
+    : null;
+
+  // Cache writers — replace the old local setState so optimistic updates land
+  // in the shared query cache (and survive navigation / refetch).
+  const setTasks = useCallback(
+    (updater: (ts: Task[] | undefined) => Task[]) =>
+      qc.setQueryData<Task[]>(qk.tasks(projectId), (old) => updater(old ?? [])),
+    [qc, projectId],
+  );
+  const bumpTaskCount = useCallback(
+    (delta: number) =>
+      qc.setQueryData(qk.project(projectId), (p: any) =>
+        p ? { ...p, _count: { tasks: Math.max(0, (p._count?.tasks ?? 0) + delta) } } : p,
+      ),
+    [qc, projectId],
+  );
+
   const [openId, setOpenId] = useState<string | null>(null);
   const [addIn, setAddIn] = useState<TaskStatus | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [view, setView] = useState<View>('board');
   const dragId = useRef<string | null>(null);
   const [drop, setDrop] = useState<{ status: TaskStatus; beforeId: string | null } | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const [p, t] = await Promise.all([
-          get<Project>(`/projects/${projectId}`),
-          get<Task[]>(`/projects/${projectId}/tasks?limit=200`),
-        ]);
-        if (!alive) return;
-        setProject(p); setTasks(t);
-        get<Member[]>(`/workspaces/${slug}/members`).then((m) => alive && setMembers(m)).catch(() => {});
-      } catch (e: any) {
-        if (alive) setError(e.message ?? 'Could not load board.');
-      }
-    })();
-    return () => { alive = false; };
-  }, [projectId, slug]);
 
   const byStatus = useMemo(() => {
     const map = new Map<TaskStatus, Task[]>();
@@ -81,12 +91,12 @@ export default function BoardPage({ slug, projectId }: { slug: string; projectId
     const task = tasks?.find((t) => t.id === id);
     if (!task) return;
     const position = computePosition(status, beforeId, id);
-    const prev = tasks!;
-    setTasks((ts) => ts!.map((t) => (t.id === id ? { ...t, status, position } : t)));
+    const prev = qc.getQueryData<Task[]>(qk.tasks(projectId)) ?? tasks!;
+    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status, position } : t)));
     try {
       await patch<Task>(`/tasks/${id}`, { status, position });
     } catch (e: any) {
-      setTasks(prev);
+      qc.setQueryData(qk.tasks(projectId), prev); // rollback to pre-drag snapshot
       toast({ msg: e.message ?? 'Could not move task.', err: true });
     }
   }
@@ -97,17 +107,17 @@ export default function BoardPage({ slug, projectId }: { slug: string; projectId
     setNewTitle('');
     try {
       const t = await post<Task>(`/projects/${projectId}/tasks`, { title, status });
-      setTasks((ts) => [...(ts ?? []), t]);
-      setProject((p) => (p ? { ...p, _count: { tasks: (p._count?.tasks ?? 0) + 1 } } : p));
+      setTasks((ts) => [...ts, t]);
+      bumpTaskCount(+1);
     } catch (e: any) {
       toast({ msg: e.message ?? 'Could not add task.', err: true });
     }
   }
 
-  function onTaskChanged(updated: Task) { setTasks((ts) => ts!.map((t) => (t.id === updated.id ? updated : t))); }
+  function onTaskChanged(updated: Task) { setTasks((ts) => ts.map((t) => (t.id === updated.id ? updated : t))); }
   function onTaskDeleted(id: string) {
-    setTasks((ts) => ts!.filter((t) => t.id !== id));
-    setProject((p) => (p ? { ...p, _count: { tasks: Math.max(0, (p._count?.tasks ?? 1) - 1) } } : p));
+    setTasks((ts) => ts.filter((t) => t.id !== id));
+    bumpTaskCount(-1);
     setOpenId(null);
   }
 
