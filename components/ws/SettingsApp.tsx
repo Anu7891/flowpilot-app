@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { get, type Role, type WorkspaceSummary } from './api';
+import { useQueryClient } from '@tanstack/react-query';
+import { type Role, type WorkspaceSummary } from './api';
+import { qk, useWorkspace } from './hooks';
 import { Icon } from './ui';
 import GeneralTab from './settings/GeneralTab';
 import MembersTab from './settings/MembersTab';
@@ -15,13 +17,14 @@ type Tab = (typeof TABS)[number];
 
 export default function SettingsApp({ slug }: { slug: string }) {
   const router = useRouter();
-  const [ws, setWs] = useState<WS | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const wsQuery = useWorkspace(slug);
+  const ws = wsQuery.data ?? null;
+  const error = wsQuery.isError
+    ? wsQuery.error instanceof Error ? wsQuery.error.message : 'Could not load workspace.'
+    : null;
+  const setWs = (w: WS) => qc.setQueryData(qk.workspace(slug), w);
   const [tab, setTab] = useState<Tab>('General');
-
-  useEffect(() => {
-    get<WS>(`/workspaces/${slug}`).then(setWs).catch((e) => setError(e.message ?? 'Could not load workspace.'));
-  }, [slug]);
 
   if (error) {
     return (

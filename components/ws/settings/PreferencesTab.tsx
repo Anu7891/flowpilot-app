@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { get, patch, type Settings } from '../api';
+import { type Settings } from '../api';
+import { useSettings, useSaveSettings } from '../hooks';
 import { Icon, useToast } from '../ui';
 
 const TIMEZONES = ['UTC', 'Asia/Kolkata', 'America/New_York', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Singapore', 'Australia/Sydney'];
@@ -15,10 +16,12 @@ const NOTIF_KEYS: { key: string; label: string }[] = [
 
 export default function PreferencesTab({ slug, canEdit }: { slug: string; canEdit: boolean }) {
   const toast = useToast();
+  const settingsQuery = useSettings(slug);
+  const saveMut = useSaveSettings(slug);
+  const saving = saveMut.isPending;
+  // Local editable copy, seeded from the server settings once they arrive.
   const [s, setS] = useState<Settings | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => { get<Settings>(`/workspaces/${slug}/settings`).then(setS).catch(() => setS(null)); }, [slug]);
+  useEffect(() => { if (settingsQuery.data) setS(settingsQuery.data); }, [settingsQuery.data]);
 
   if (!s) return <div className="card"><div className="loading"><span className="spinner" /> Loading preferences…</div></div>;
 
@@ -26,18 +29,15 @@ export default function PreferencesTab({ slug, canEdit }: { slug: string; canEdi
   function setField<K extends keyof Settings>(k: K, v: Settings[K]) { setS((p) => (p ? { ...p, [k]: v } : p)); }
   function toggle(key: string) { setS((p) => (p ? { ...p, notificationPrefs: { ...p.notificationPrefs, [key]: !p.notificationPrefs?.[key] } } : p)); }
 
-  async function save() {
+  function save() {
     if (!s) return;
-    setSaving(true);
-    try {
-      const updated = await patch<Settings>(`/workspaces/${slug}/settings`, {
-        timezone: s.timezone, dateFormat: s.dateFormat, defaultView: s.defaultView, notificationPrefs: s.notificationPrefs ?? {},
-      });
-      setS(updated);
-      toast({ msg: 'Preferences saved.' });
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not save.', err: true });
-    } finally { setSaving(false); }
+    saveMut.mutate(
+      { timezone: s.timezone, dateFormat: s.dateFormat, defaultView: s.defaultView, notificationPrefs: s.notificationPrefs ?? {} },
+      {
+        onSuccess: (updated) => { setS(updated); toast({ msg: 'Preferences saved.' }); },
+        onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not save.', err: true }),
+      },
+    );
   }
 
   return (
