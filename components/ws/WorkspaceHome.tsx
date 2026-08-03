@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { get, post, ApiError, type WorkspaceSummary, type Member, type Project, type Role } from './api';
+import { ApiError } from './api';
+import { useWorkspace, useProjects, useMembers, useSession, useCreateProject } from './hooks';
 import { Icon, initials, useToast } from './ui';
 import Tour, { type TourStep } from './Tour';
 
@@ -20,35 +21,30 @@ function greeting() {
 export default function WorkspaceHome({ slug }: { slug: string }) {
   const router = useRouter();
   const toast = useToast();
-  const [ws, setWs] = useState<(WorkspaceSummary & { role: Role }) | null>(null);
-  const [projects, setProjects] = useState<Project[] | null>(null);
-  const [members, setMembers] = useState<Member[] | null>(null);
-  const [name, setName] = useState<string>('there');
-  const [error, setError] = useState<string | null>(null);
+  const wsQuery = useWorkspace(slug);
+  const projectsQuery = useProjects(slug);
+  const membersQuery = useMembers(slug);
+  const sessionQuery = useSession();
+  const createProjectMut = useCreateProject(slug);
+
+  const ws = wsQuery.data ?? null;
+  // Child lists fail soft (empty) so one flaky list never blanks the whole page.
+  const projects = projectsQuery.isError ? [] : projectsQuery.data ?? null;
+  const members = membersQuery.isError ? [] : membersQuery.data ?? null;
+  const name = sessionQuery.data?.user?.name.split(' ')[0] ?? 'there';
+  const error = wsQuery.isError
+    ? wsQuery.error instanceof ApiError
+      ? wsQuery.error.message
+      : 'Could not load workspace.'
+    : null;
+
   const [tour, setTour] = useState(false);
 
   // create project modal
   const [creating, setCreating] = useState(false);
   const [pName, setPName] = useState('');
   const [pIcon, setPIcon] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const w = await get<WorkspaceSummary & { role: Role }>(`/workspaces/${slug}`);
-        if (!alive) return;
-        setWs(w);
-        get<Project[]>(`/workspaces/${slug}/projects`).then((p) => alive && setProjects(p)).catch(() => alive && setProjects([]));
-        get<Member[]>(`/workspaces/${slug}/members`).then((m) => alive && setMembers(m)).catch(() => alive && setMembers([]));
-        get<{ user: { name: string } | null }>('/auth/session').then((s) => alive && s.user && setName(s.user.name.split(' ')[0])).catch(() => {});
-      } catch (e) {
-        if (alive) setError(e instanceof ApiError ? e.message : 'Could not load workspace.');
-      }
-    })();
-    return () => { alive = false; };
-  }, [slug]);
+  const saving = createProjectMut.isPending;
 
   // auto-start tour once per browser
   useEffect(() => {
@@ -60,16 +56,20 @@ export default function WorkspaceHome({ slug }: { slug: string }) {
 
   function endTour() { setTour(false); try { localStorage.setItem('fp_tour_done', '1'); } catch {} }
 
-  async function createProject(e: React.FormEvent) {
+  function createProject(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    try {
-      const p = await post<Project>(`/workspaces/${slug}/projects`, { name: pName, icon: pIcon.trim() || undefined });
-      toast({ msg: 'Project created.' });
-      router.push(`/w/${slug}/projects/${p.id}`);
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not create project.', err: true });
-    } finally { setSaving(false); }
+    createProjectMut.mutate(
+      { name: pName, icon: pIcon.trim() || undefined },
+      {
+        onSuccess: (p) => {
+          toast({ msg: 'Project created.' });
+          router.push(`/w/${slug}/projects/${p.id}`);
+        },
+        onError: (err) => {
+          toast({ msg: err instanceof Error ? err.message : 'Could not create project.', err: true });
+        },
+      },
+    );
   }
 
   if (error) {

@@ -5,6 +5,7 @@ import './landing.css';
 import './flow.css';
 import './workspace.css';
 import IconSprite from '@/components/IconSprite';
+import QueryProvider from '@/components/providers/QueryProvider';
 
 export const metadata = {
   title: 'FlowPilot — Plan smarter. Build faster. Deliver with confidence.',
@@ -25,7 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <IconSprite />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );
