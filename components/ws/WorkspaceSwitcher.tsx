@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { get, post, type WorkspaceSummary } from './api';
+import { type WorkspaceSummary } from './api';
+import { useWorkspaces, useSwitchWorkspace } from './hooks';
 import { Icon, initials, useToast } from './ui';
 
 function accent(w: WorkspaceSummary) {
@@ -12,14 +13,12 @@ export default function WorkspaceSwitcher({ activeSlug }: { activeSlug: string }
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[] | null>(null);
+  const workspacesQuery = useWorkspaces();
+  const switchMut = useSwitchWorkspace();
+  const workspaces = workspacesQuery.isError ? [] : workspacesQuery.data ?? null;
+  const switching = switchMut.isPending;
   const [q, setQ] = useState('');
-  const [switching, setSwitching] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    get<WorkspaceSummary[]>('/workspaces').then(setWorkspaces).catch(() => setWorkspaces([]));
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -39,18 +38,13 @@ export default function WorkspaceSwitcher({ activeSlug }: { activeSlug: string }
     return [...filtered].sort((a, b) => (a.slug === activeSlug ? -1 : b.slug === activeSlug ? 1 : 0));
   }, [workspaces, q, activeSlug]);
 
-  async function switchTo(w: WorkspaceSummary) {
+  function switchTo(w: WorkspaceSummary) {
     setOpen(false);
     if (w.slug === activeSlug) return;
-    setSwitching(true);
-    try {
-      await post(`/workspaces/${w.slug}/switch`);
-      router.push(`/w/${w.slug}`);
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not switch workspace.', err: true });
-    } finally {
-      setSwitching(false);
-    }
+    switchMut.mutate(w.slug, {
+      onSuccess: () => router.push(`/w/${w.slug}`),
+      onError: (err) => toast({ msg: err instanceof Error ? err.message : 'Could not switch workspace.', err: true }),
+    });
   }
 
   return (
