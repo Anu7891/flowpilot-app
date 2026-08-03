@@ -19,6 +19,7 @@ import type {
   Role,
   Invitation,
   Settings,
+  Comment,
 } from './api';
 
 /** Centralized, hierarchical query keys — invalidate a whole subtree by prefix. */
@@ -32,6 +33,7 @@ export const qk = {
   settings: (slug: string) => ['workspace', slug, 'settings'] as const,
   project: (projectId: string) => ['project', projectId] as const,
   tasks: (projectId: string) => ['project', projectId, 'tasks'] as const,
+  comments: (taskId: string) => ['task', taskId, 'comments'] as const,
 };
 
 type WorkspaceDetail = WorkspaceSummary & { role: Role };
@@ -39,7 +41,7 @@ type WorkspaceDetail = WorkspaceSummary & { role: Role };
 export function useSession() {
   return useQuery({
     queryKey: qk.session,
-    queryFn: () => get<{ user: { name: string; email: string } | null }>('/auth/session'),
+    queryFn: () => get<{ user: { id: string; name: string; email: string } | null }>('/auth/session'),
     staleTime: 5 * 60_000, // identity rarely changes within a session
   });
 }
@@ -201,6 +203,39 @@ export function useDeleteWorkspace(slug: string) {
   return useMutation({
     mutationFn: () => del(`/workspaces/${slug}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.workspaces }),
+  });
+}
+
+// ---- Comments (task panel) ----
+export function useComments(taskId: string) {
+  return useQuery({
+    queryKey: qk.comments(taskId),
+    // API returns newest-first; the panel renders oldest-first.
+    queryFn: async () => [...(await get<Comment[]>(`/tasks/${taskId}/comments?limit=100`))].reverse(),
+  });
+}
+
+export function useAddComment(taskId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (message: string) => post<Comment>(`/tasks/${taskId}/comments`, { message }),
+    onSuccess: (c) => qc.setQueryData<Comment[]>(qk.comments(taskId), (old) => [...(old ?? []), c]),
+  });
+}
+
+export function useEditComment(taskId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, message }: { id: string; message: string }) => patch<Comment>(`/comments/${id}`, { message }),
+    onSuccess: (c) => qc.setQueryData<Comment[]>(qk.comments(taskId), (old) => old?.map((x) => (x.id === c.id ? c : x)) ?? old),
+  });
+}
+
+export function useDeleteComment(taskId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => del(`/comments/${id}`),
+    onSuccess: (_r, id) => qc.setQueryData<Comment[]>(qk.comments(taskId), (old) => old?.filter((x) => x.id !== id) ?? old),
   });
 }
 
