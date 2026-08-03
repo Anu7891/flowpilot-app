@@ -1,0 +1,17 @@
+# Local Postgres for FlowPilot development.
+# Start:  npm run db:up      Stop:  docker compose down
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: flowpilot-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flowpilot
+      POSTGRES_PASSWORD: flowpilot
+      POSTGRES_DB: flowpilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - flowpilot_pgdata:/var/lib/postgresql/data
+volumes:
+  flowpilot_pgdata:

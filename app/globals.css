@@ -1,0 +1,107 @@
+/* ============================================================
+   FLOWPILOT DESIGN FOUNDATION v1.0 - tokens (single source)
+   ============================================================ */
+:root {
+  /* ---- Neutrals (cool gray, blue undertone) ---- */
+  --n-0:#FFFFFF; --n-25:#FAFBFC; --n-50:#F6F7F9; --n-100:#EFF0F4;
+  --n-200:#E3E5EB; --n-300:#CDD0DA; --n-400:#A9AEBD; --n-500:#7E8496;
+  --n-600:#555B6D; --n-700:#3B4053; --n-800:#262A3A; --n-900:#171A26;
+
+  /* ---- Primary · FlowPilot Indigo ---- */
+  --primary-50:#EEF0FD;  --primary-100:#DFE3FB; --primary-200:#C3C9F4;
+  --primary-300:#9AA3EB; --primary-400:#7681E1; --primary-500:#5A66D9;
+  --primary-600:#4650C7; --primary-700:#3A43AB; --primary-800:#30378D;
+  --primary-900:#292F71;
+
+  /* ---- Accent · Deep Teal (charts, highlights — used sparingly) ---- */
+  --accent-500:#12A38A; --accent-600:#0F8A75; --accent-700:#0C7261;
+  --accent-bg:#E4F4F1;  --accent-border:#B7E2DA;
+
+  /* ---- Semantic surfaces ---- */
+  --bg-app:#F6F7F9;        /* app canvas */
+  --bg-surface:#FFFFFF;    /* cards, panels, popovers */
+  --bg-subtle:#EFF0F4;     /* hovers, wells, secondary fills */
+  --bg-inset:#E9EBF0;      /* pressed, disabled fills, code blocks */
+  --bg-overlay:rgba(23,26,38,.44);
+
+  --border:#E3E5EB;        /* default hairline */
+  --border-strong:#CDD0DA; /* inputs, interactive outlines */
+
+  /* ---- Text hierarchy ---- */
+  --text-1:#171A26;        /* primary — headings, body        ≈17:1  */
+  --text-2:#555B6D;        /* secondary — supporting copy     ≈6.8:1 */
+  --text-3:#7E8496;        /* tertiary — meta, timestamps     ≈3.7:1 */
+  --text-disabled:#A9AEBD;
+  --text-inverse:#FFFFFF;
+  --text-link:#4650C7;
+
+  /* ---- Brand roles ---- */
+  --primary:#4650C7; --primary-h:#3A43AB; --primary-a:#30378D;
+  --on-primary:#FFFFFF;
+
+  /* ---- Status ---- */
+  --success:#177E4D; --success-h:#136A41; --success-bg:#E7F5EE; --success-border:#BCE3CE; --success-text:#136A41;
+  --warning:#B26205; --warning-h:#96530A; --warning-bg:#FCF3E3; --warning-border:#F0D8A9; --warning-text:#8F4E04;
+  --danger:#C13539;  --danger-h:#A62D31;  --danger-a:#8E262A;   --danger-bg:#FBEDEE; --danger-border:#F2CACB; --danger-text:#A62D31;
+
+  /* ---- Focus ring (2px offset halo, never removed) ---- */
+  --ring-color:var(--primary-400);
+  --ring:0 0 0 2px var(--bg-surface), 0 0 0 4px var(--ring-color);
+  --ring-soft:rgba(70,80,199,.16);
+  --ring-danger:rgba(193,53,57,.16);
+
+  /* ---- Elevation ---- */
+  --shadow-xs:0 1px 2px rgba(23,26,38,.05);
+  --shadow-sm:0 1px 2px rgba(23,26,38,.04), 0 2px 8px rgba(23,26,38,.04);
+  --shadow-md:0 2px 4px rgba(23,26,38,.04), 0 10px 24px -4px rgba(23,26,38,.12);
+  --shadow-lg:0 8px 16px -6px rgba(23,26,38,.08), 0 24px 56px -12px rgba(23,26,38,.22);
+
+  /* ---- Type ---- */
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+
+  /* ---- Spacing · 8px base ---- */
+  --s-05:4px; --s-1:8px; --s-2:16px; --s-3:24px; --s-4:32px;
+  --s-5:40px; --s-6:48px; --s-8:64px; --s-10:80px;
+
+  /* ---- Radius ---- */
+  --r-xs:4px; --r-sm:6px; --r-md:8px; --r-lg:12px; --r-full:999px;
+
+  /* ---- Motion ---- */
+  --ease:cubic-bezier(.2,0,0,1);
+  --dur-1:100ms; --dur-2:150ms; --dur-3:200ms; --dur-4:300ms;
+}
+
+[data-theme="dark"] {
+  --bg-app:#0D0E12; --bg-surface:#15161C; --bg-subtle:#1C1E26; --bg-inset:#22242E;
+  --bg-overlay:rgba(0,0,0,.6);
+  --border:#282B36; --border-strong:#383C4A;
+  --text-1:#EDEEF3; --text-2:#A7ADBD; --text-3:#737A8C;
+  --text-disabled:#4E5364; --text-inverse:#171A26; --text-link:#98A1EF;
+
+  --primary:#5A66D9; --primary-h:#6B76E0; --primary-a:#7681E1;
+  --ring-color:#5A66D9;
+  --ring-soft:rgba(90,102,217,.32); --ring-danger:rgba(212,84,89,.3);
+
+  --accent-500:#2BB39A; --accent-600:#2BB39A; --accent-bg:#12332C; --accent-border:#1E5348;
+
+  --success:#3CA96F; --success-h:#4EBB80; --success-bg:#15291F; --success-border:#23573C; --success-text:#7DD8A8;
+  --warning:#D98A2B; --warning-h:#E39A42; --warning-bg:#2C2214; --warning-border:#5A4420; --warning-text:#EFB661;
+  --danger:#D45459;  --danger-h:#DE686C;  --danger-a:#E67E82;   --danger-bg:#2E191B; --danger-border:#5C2A2E; --danger-text:#F09A9D;
+
+  --shadow-xs:0 1px 2px rgba(0,0,0,.4);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.35);
+  --shadow-md:0 2px 4px rgba(0,0,0,.4), 0 10px 24px -4px rgba(0,0,0,.5);
+  --shadow-lg:0 8px 16px -6px rgba(0,0,0,.45), 0 24px 56px -12px rgba(0,0,0,.65);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+[hidden] { display: none !important; }
+:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--r-sm); }
+.pg-ds, .pg-landing, .pg-flow { min-height: 100vh; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  html { scroll-behavior: auto; }
+}
