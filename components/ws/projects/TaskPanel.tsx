@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { get, post, patch, del, TASK_STATUSES, TASK_PRIORITIES, type Task, type Member, type Comment } from '../api';
+import { patch, del, TASK_STATUSES, TASK_PRIORITIES, type Task, type Member } from '../api';
+import { useSession, useComments, useAddComment, useEditComment, useDeleteComment } from '../hooks';
 import { Icon, initials, timeAgo, useToast } from '../ui';
 
 const toDateInput = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : '');
@@ -11,29 +12,24 @@ export default function TaskPanel({
   task: Task; members: Member[]; onClose: () => void; onChanged: (t: Task) => void; onDeleted: () => void;
 }) {
   const toast = useToast();
+  const meId = useSession().data?.user?.id ?? null;
   const [title, setTitle] = useState(task.title);
   const [desc, setDesc] = useState(task.description ?? '');
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
-  const [meId, setMeId] = useState<string | null>(null);
 
-  const [comments, setComments] = useState<Comment[] | null>(null);
+  const commentsQuery = useComments(task.id);
+  const comments = commentsQuery.isError ? [] : commentsQuery.data ?? null;
+  const addMut = useAddComment(task.id);
+  const editMut = useEditComment(task.id);
+  const delMut = useDeleteComment(task.id);
+  const posting = addMut.isPending;
   const [draft, setDraft] = useState('');
-  const [posting, setPosting] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const listEnd = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setTitle(task.title); setDesc(task.description ?? ''); }, [task.id]);
-
-  useEffect(() => {
-    get<{ user: { id: string } | null }>('/auth/session').then((s) => setMeId(s.user?.id ?? null)).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    setComments(null);
-    get<Comment[]>(`/tasks/${task.id}/comments?limit=100`).then((c) => setComments([...c].reverse())).catch(() => setComments([]));
-  }, [task.id]);
 
   async function save(patchObj: Record<string, unknown>) {
     setSaving(true);
@@ -50,32 +46,29 @@ export default function TaskPanel({
     catch (e: any) { toast({ msg: e.message ?? 'Could not delete.', err: true }); }
   }
 
-  async function addComment() {
+  function addComment() {
     const message = draft.trim();
     if (!message) return;
-    setPosting(true); setDraft('');
-    try {
-      const c = await post<Comment>(`/tasks/${task.id}/comments`, { message });
-      setComments((cs) => [...(cs ?? []), c]);
-      setTimeout(() => listEnd.current?.scrollIntoView({ behavior: 'smooth' }), 40);
-    } catch (e: any) {
-      toast({ msg: e.message ?? 'Could not post comment.', err: true }); setDraft(message);
-    } finally { setPosting(false); }
+    setDraft('');
+    addMut.mutate(message, {
+      onSuccess: () => setTimeout(() => listEnd.current?.scrollIntoView({ behavior: 'smooth' }), 40),
+      onError: (e) => { toast({ msg: e instanceof Error ? e.message : 'Could not post comment.', err: true }); setDraft(message); },
+    });
   }
 
-  async function saveEdit(id: string) {
+  function saveEdit(id: string) {
     const message = editText.trim();
     if (!message) return;
-    try {
-      const c = await patch<Comment>(`/comments/${id}`, { message });
-      setComments((cs) => cs!.map((x) => (x.id === id ? c : x)));
-      setEditId(null);
-    } catch (e: any) { toast({ msg: e.message ?? 'Could not edit.', err: true }); }
+    editMut.mutate({ id, message }, {
+      onSuccess: () => setEditId(null),
+      onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not edit.', err: true }),
+    });
   }
 
-  async function delComment(id: string) {
-    try { await del(`/comments/${id}`); setComments((cs) => cs!.filter((x) => x.id !== id)); }
-    catch (e: any) { toast({ msg: e.message ?? 'Could not delete comment.', err: true }); }
+  function delComment(id: string) {
+    delMut.mutate(id, {
+      onError: (e) => toast({ msg: e instanceof Error ? e.message : 'Could not delete comment.', err: true }),
+    });
   }
 
   return (
