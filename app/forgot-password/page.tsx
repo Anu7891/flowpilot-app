@@ -1,5 +1,5 @@
-import FlowApp from '@/components/FlowApp';
+import ForgotForm from '@/components/auth/ForgotForm';
 
 export default function Page() {
-  return <FlowApp initial="s-forgot" />;
+  return <ForgotForm />;
 }
