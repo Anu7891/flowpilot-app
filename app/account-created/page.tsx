@@ -1,5 +1,5 @@
-import FlowApp from '@/components/FlowApp';
+import AccountCreated from '@/components/auth/AccountCreated';
 
 export default function Page() {
-  return <FlowApp initial="s-created" />;
+  return <AccountCreated />;
 }
