@@ -1,5 +1,5 @@
-import FlowApp from '@/components/FlowApp';
+import Onboarding from '@/components/onboarding/Onboarding';
 
 export default function Page() {
-  return <FlowApp initial="s-ob1" />;
+  return <Onboarding />;
 }
