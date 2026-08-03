@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ASSIGNABLE_ROLES } from '@/src/shared/enums';
 
 export const slugSchema = z
   .string()
@@ -22,11 +23,11 @@ export type UpdateWorkspaceDto = z.infer<typeof updateWorkspaceSchema>;
 
 export const inviteMemberSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
-  role: z.enum(['ADMIN', 'MEMBER', 'GUEST']).default('MEMBER'),
+  role: z.enum(ASSIGNABLE_ROLES).default('MEMBER'),
 }).strict();
 export type InviteMemberDto = z.infer<typeof inviteMemberSchema>;
 
 export const updateMemberSchema = z.object({
-  role: z.enum(['ADMIN', 'MEMBER', 'GUEST']),
+  role: z.enum(ASSIGNABLE_ROLES),
 }).strict();
 export type UpdateMemberDto = z.infer<typeof updateMemberSchema>;

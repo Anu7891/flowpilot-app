@@ -29,9 +29,9 @@ export const patch = <T>(p: string, body: unknown) =>
   api<T>(p, { method: 'PATCH', body: JSON.stringify(body) });
 export const del = (p: string) => api<void>(p, { method: 'DELETE' });
 
-// ---- Shared types ----
-export type Role = 'OWNER' | 'ADMIN' | 'MEMBER' | 'GUEST';
-export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'REVOKED';
+// ---- Shared enum types (single source of truth: src/shared/enums.ts) ----
+import type { Role, InvitationStatus, ProjectStatus, TaskStatus, TaskPriority } from '@/src/shared/enums';
+export type { Role, InvitationStatus, ProjectStatus, TaskStatus, TaskPriority };
 
 export type WorkspaceSummary = {
   id: string; name: string; slug: string; logo: string | null;
@@ -56,10 +56,6 @@ export type Settings = {
 };
 
 // ---- Projects & Tasks (Phase 5) ----
-export type ProjectStatus = 'PLANNING' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
-export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'CANCELED';
-export type TaskPriority = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-
 export type Project = {
   id: string; workspaceId: string; name: string; description: string | null;
   status: ProjectStatus; icon: string | null; archived: boolean;
