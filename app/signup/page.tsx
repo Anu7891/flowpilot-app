@@ -1,5 +1,5 @@
-import FlowApp from '@/components/FlowApp';
+import SignupForm from '@/components/auth/SignupForm';
 
 export default function Page() {
-  return <FlowApp initial="s-signup" />;
+  return <SignupForm />;
 }
