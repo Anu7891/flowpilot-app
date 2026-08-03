@@ -39,6 +39,24 @@ export function useSession() {
   });
 }
 
+export function useWorkspaces() {
+  return useQuery({
+    queryKey: ['workspaces'],
+    queryFn: () => get<WorkspaceSummary[]>('/workspaces'),
+  });
+}
+
+/** Persist the active workspace server-side, then refresh session (lastWorkspaceId). */
+export function useSwitchWorkspace() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (targetSlug: string) => post(`/workspaces/${targetSlug}/switch`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.session });
+    },
+  });
+}
+
 export function useWorkspace(slug: string) {
   return useQuery({
     queryKey: qk.workspace(slug),

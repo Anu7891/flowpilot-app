@@ -1,18 +1,16 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import { Icon } from './ui';
-import { get, type Project } from './api';
+import { useProjects } from './hooks';
 
 export default function Sidebar({ slug }: { slug: string }) {
   const router = useRouter();
   const pathname = usePathname() || '';
-  const [projects, setProjects] = useState<Project[] | null>(null);
-
-  useEffect(() => {
-    get<Project[]>(`/workspaces/${slug}/projects`).then(setProjects).catch(() => setProjects([]));
-  }, [slug, pathname]);
+  // Shared cache with the projects pages — creating a project anywhere refreshes
+  // this list automatically (no more refetch-on-navigation hack).
+  const projectsQuery = useProjects(slug);
+  const projects = projectsQuery.isError ? [] : projectsQuery.data ?? null;
 
   const isHome = pathname === `/w/${slug}`;
   const onProjects = pathname === `/w/${slug}/projects`;
