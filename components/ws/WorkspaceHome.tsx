@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError } from './api';
-import { useWorkspace, useProjects, useMembers, useSession, useCreateProject } from './hooks';
+import { useWorkspace, useProjects, useMembers, useSession, useCreateProject, usePrefetchProject } from './hooks';
 import { Icon, initials, useToast } from './ui';
 import Tour, { type TourStep } from './Tour';
 
@@ -26,6 +26,7 @@ export default function WorkspaceHome({ slug }: { slug: string }) {
   const membersQuery = useMembers(slug);
   const sessionQuery = useSession();
   const createProjectMut = useCreateProject(slug);
+  const prefetchProject = usePrefetchProject();
 
   const ws = wsQuery.data ?? null;
   // Child lists fail soft (empty) so one flaky list never blanks the whole page.
@@ -109,7 +110,7 @@ export default function WorkspaceHome({ slug }: { slug: string }) {
             </div>
           )}
           {recent.map((p) => (
-            <button key={p.id} className="ws-item" style={{ padding: '8px 8px' }} onClick={() => router.push(`/w/${slug}/projects/${p.id}`)}>
+            <button key={p.id} className="ws-item" style={{ padding: '8px 8px' }} onMouseEnter={() => prefetchProject(p.id)} onClick={() => router.push(`/w/${slug}/projects/${p.id}`)}>
               <span className="proj-ic" style={{ width: 30, height: 30, fontSize: 14 }}>{p.icon ?? <Icon name="i-layers" />}</span>
               <span className="meta"><span className="nm">{p.name}</span><span className="rl">{p._count?.tasks ?? 0} tasks</span></span>
               <span className="tick"><Icon name="i-chev-r" /></span>
