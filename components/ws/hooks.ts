@@ -100,6 +100,19 @@ export function useTasks(projectId: string) {
   });
 }
 
+/**
+ * Returns a prefetcher for a project's board. Call it on hover/focus of a
+ * project link so the board's data is already cached by the time it's clicked
+ * — the navigation then feels instant instead of showing a loading state.
+ */
+export function usePrefetchProject() {
+  const qc = useQueryClient();
+  return (projectId: string) => {
+    qc.prefetchQuery({ queryKey: qk.project(projectId), queryFn: () => get<Project>(`/projects/${projectId}`) });
+    qc.prefetchQuery({ queryKey: qk.tasks(projectId), queryFn: () => get<Task[]>(`/projects/${projectId}/tasks?limit=200`) });
+  };
+}
+
 /** Create a project, then refresh the workspace's project list. */
 export function useCreateProject(slug: string) {
   const qc = useQueryClient();

@@ -3,7 +3,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import ThemeToggle from './ThemeToggle';
 import { Icon } from './ui';
-import { useProjects } from './hooks';
+import { useProjects, usePrefetchProject } from './hooks';
 
 export default function Sidebar({ slug }: { slug: string }) {
   const router = useRouter();
@@ -12,6 +12,7 @@ export default function Sidebar({ slug }: { slug: string }) {
   // this list automatically (no more refetch-on-navigation hack).
   const projectsQuery = useProjects(slug);
   const projects = projectsQuery.isError ? [] : projectsQuery.data ?? null;
+  const prefetchProject = usePrefetchProject();
 
   const isHome = pathname === `/w/${slug}`;
   const onProjects = pathname === `/w/${slug}/projects`;
@@ -36,7 +37,7 @@ export default function Sidebar({ slug }: { slug: string }) {
         {!projects && <div className="side-proj muted" style={{ fontSize: 12 }}>Loading…</div>}
         {projects?.length === 0 && <div className="muted" style={{ fontSize: 12.5, padding: '4px 10px' }}>No projects yet.</div>}
         {projects?.map((p) => (
-          <button key={p.id} className={`side-proj ${activeProjectId === p.id ? 'active' : ''}`} onClick={() => router.push(`/w/${slug}/projects/${p.id}`)}>
+          <button key={p.id} className={`side-proj ${activeProjectId === p.id ? 'active' : ''}`} onMouseEnter={() => prefetchProject(p.id)} onClick={() => router.push(`/w/${slug}/projects/${p.id}`)}>
             <span className="pic">{p.icon ?? <Icon name="i-layers" />}</span>
             <span className="nm">{p.name}</span>
             <span className="ct">{p._count?.tasks ?? 0}</span>

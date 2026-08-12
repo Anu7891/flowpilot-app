@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useProjects, useCreateProject } from '../hooks';
+import { useProjects, useCreateProject, usePrefetchProject } from '../hooks';
 import Modal from '../Modal';
 import { Icon, useToast } from '../ui';
 
@@ -10,6 +10,7 @@ export default function ProjectsPage({ slug }: { slug: string }) {
   const toast = useToast();
   const projectsQuery = useProjects(slug);
   const createMut = useCreateProject(slug);
+  const prefetchProject = usePrefetchProject();
 
   const projects = projectsQuery.data ?? null;
   const error = projectsQuery.isError
@@ -55,7 +56,7 @@ export default function ProjectsPage({ slug }: { slug: string }) {
         <div className="proj-grid">
           {!projects && <div className="loading"><span className="spinner" /> Loading…</div>}
           {projects?.map((p) => (
-            <button key={p.id} className="proj-card" onClick={() => router.push(`/w/${slug}/projects/${p.id}`)}>
+            <button key={p.id} className="proj-card" onMouseEnter={() => prefetchProject(p.id)} onClick={() => router.push(`/w/${slug}/projects/${p.id}`)}>
               <div className="top">
                 <span className="proj-ic">{p.icon ?? <Icon name="i-layers" />}</span>
                 <span className="nm">{p.name}</span>
