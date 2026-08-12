@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { type Role, type WorkspaceSummary } from '../api';
 import { useUpdateWorkspace, useDeleteWorkspace } from '../hooks';
+import Modal from '../Modal';
 import { useToast } from '../ui';
 
 type WS = WorkspaceSummary & { role: Role };
@@ -63,19 +64,17 @@ export default function DangerTab({ ws, isOwner, onArchived }: { ws: WS; isOwner
       )}
 
       {showDelete && (
-        <div className="modal-scrim" onClick={() => setShowDelete(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Delete “{ws.name}”?</h3>
-            <p>This removes the workspace for everyone. Type <strong>{ws.slug}</strong> to confirm.</p>
-            <input className="input" value={confirmText} placeholder={ws.slug} onChange={(e) => setConfirmText(e.target.value)} autoFocus />
-            <div className="card-actions">
-              <button className="btn btn-secondary" onClick={() => setShowDelete(false)}>Cancel</button>
-              <button className="btn btn-danger" disabled={confirmText !== ws.slug || busy === 'delete'} onClick={doDelete}>
-                {busy === 'delete' ? <><span className="spinner" /> Deleting…</> : 'Delete forever'}
-              </button>
-            </div>
+        <Modal onClose={() => setShowDelete(false)} labelledBy="del-title">
+          <h3 id="del-title">Delete “{ws.name}”?</h3>
+          <p>This removes the workspace for everyone. Type <strong>{ws.slug}</strong> to confirm.</p>
+          <input className="input" value={confirmText} placeholder={ws.slug} onChange={(e) => setConfirmText(e.target.value)} autoFocus />
+          <div className="card-actions">
+            <button className="btn btn-secondary" onClick={() => setShowDelete(false)}>Cancel</button>
+            <button className="btn btn-danger" disabled={confirmText !== ws.slug || busy === 'delete'} onClick={doDelete}>
+              {busy === 'delete' ? <><span className="spinner" /> Deleting…</> : 'Delete forever'}
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

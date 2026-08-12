@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProjects, useCreateProject } from '../hooks';
+import Modal from '../Modal';
 import { Icon, useToast } from '../ui';
 
 export default function ProjectsPage({ slug }: { slug: string }) {
@@ -73,9 +74,9 @@ export default function ProjectsPage({ slug }: { slug: string }) {
       )}
 
       {creating && (
-        <div className="modal-scrim" onClick={() => setCreating(false)}>
-          <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={create}>
-            <h3>Create project</h3>
+        <Modal onClose={() => setCreating(false)} labelledBy="cp-title">
+          <form onSubmit={create}>
+            <h3 id="cp-title">Create project</h3>
             <div style={{ display: 'flex', gap: 'var(--s-2)', alignItems: 'flex-end' }}>
               <div className="field" style={{ maxWidth: 90 }}>
                 <label htmlFor="p-icon">Icon</label>
@@ -97,7 +98,7 @@ export default function ProjectsPage({ slug }: { slug: string }) {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </div>
   );
