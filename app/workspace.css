@@ -166,6 +166,10 @@
 
 /* ---------- States ---------- */
 .pg-ws .loading{display:flex; align-items:center; justify-content:center; gap:10px; padding:var(--s-8); color:var(--text-3)}
+/* Shimmer skeleton (token-based, adapts to theme) */
+.pg-ws .fp-skel{display:block; background:linear-gradient(90deg,var(--bg-subtle) 25%,var(--bg-inset) 37%,var(--bg-subtle) 63%); background-size:400% 100%; animation:fpShimmer 1.4s ease infinite}
+@keyframes fpShimmer{from{background-position:100% 0} to{background-position:0 0}}
+@media (prefers-reduced-motion: reduce){.pg-ws .fp-skel{animation:none}}
 .pg-ws .center-state{max-width:420px; margin:var(--s-10) auto; text-align:center}
 .pg-ws .center-state .ic{width:48px; height:48px; margin:0 auto var(--s-2); color:var(--text-3)}
 .pg-ws .center-state h2{margin:0 0 6px; font-size:18px}
@@ -208,10 +212,17 @@
 .pg-ws .board-head .spacer{flex:1}
 
 /* ---------- Board columns ---------- */
-.pg-ws .board{display:flex; gap:14px; align-items:flex-start; overflow-x:auto; padding-bottom:8px}
+.pg-ws .board{display:flex; gap:14px; align-items:stretch; flex:1; min-height:0; overflow-x:auto; padding-bottom:8px}
+/* Thin, subtle horizontal scrollbar for the board */
+.pg-ws .board{scrollbar-width:thin; scrollbar-color:var(--border-strong) transparent}
+.pg-ws .board::-webkit-scrollbar{height:10px}
+.pg-ws .board::-webkit-scrollbar-track{background:transparent}
+.pg-ws .board::-webkit-scrollbar-thumb{background:var(--border-strong); border-radius:99px; border:3px solid var(--bg-app); background-clip:padding-box}
+.pg-ws .board::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
 .pg-ws .col{
   flex:0 0 288px; width:288px; background:var(--bg-subtle); border:1px solid var(--border);
-  border-radius:var(--r-lg); display:flex; flex-direction:column; max-height:calc(100vh - 190px);
+  border-radius:var(--r-lg); display:flex; flex-direction:column;
+  min-height:200px; /* fills the board via .board{align-items:stretch;height:100%} */
 }
 .pg-ws .col.drop{outline:2px dashed var(--primary-300); outline-offset:-2px; background:var(--primary-50)}
 .pg-ws .col-head{display:flex; align-items:center; gap:8px; padding:10px 12px; position:sticky; top:0}
@@ -351,7 +362,8 @@
   position:sticky; top:0; background:var(--bg-app); z-index:20; flex-wrap:wrap;
 }
 .pg-ws .crumb{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600}
-.pg-ws .crumb .sep{color:var(--text-3)}
+.pg-ws .crumb .sep{color:var(--text-3); display:inline-flex}
+.pg-ws .crumb .sep svg{width:15px; height:15px}
 .pg-ws .crumb .count{font-size:12px; color:var(--text-3); background:var(--bg-inset); border-radius:var(--r-full); padding:1px 8px; font-weight:500}
 .pg-ws .view-toggle{display:inline-flex; background:var(--bg-inset); border-radius:var(--r-sm); padding:2px}
 .pg-ws .view-toggle button{width:30px; height:26px; border:none; background:none; border-radius:var(--r-xs); color:var(--text-3); cursor:pointer; display:inline-flex; align-items:center; justify-content:center}
@@ -359,7 +371,7 @@
 .pg-ws .view-toggle button.on{background:var(--bg-surface); color:var(--text-1); box-shadow:var(--shadow-xs)}
 
 /* board sits inside padded main */
-.pg-ws .board-wrap{padding:var(--s-3); flex:1; min-height:0}
+.pg-ws .board-wrap{padding:var(--s-3); flex:1; min-height:0; display:flex; flex-direction:column}
 
 /* polished task card */
 .pg-ws .task-card{position:relative; overflow:hidden}

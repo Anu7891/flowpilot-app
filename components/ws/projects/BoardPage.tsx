@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { patch, post, TASK_STATUSES, type Task, type TaskStatus } from '../api';
 import { qk, useProject, useTasks, useMembers } from '../hooks';
 import { Icon, initials, useToast } from '../ui';
+import Skeleton from '../Skeleton';
 import { PriorityPill, DueLabel, pos } from './shared';
 import TaskPanel from './TaskPanel';
 
@@ -141,7 +142,35 @@ export default function BoardPage({ slug, projectId }: { slug: string; projectId
     return <div className="page"><div className="center-state"><Icon name="i-warn" className="ic" /><h2>Board unavailable</h2><p>{error}</p>
       <button className="btn btn-secondary" onClick={() => router.push(`/w/${slug}/projects`)}>Back to projects</button></div></div>;
   }
-  if (!project || !tasks) return <div className="page"><div className="loading"><span className="spinner" /> Loading board…</div></div>;
+  if (!project || !tasks) {
+    // Skeleton board — mirrors the real layout so there's no jarring swap on load.
+    return (
+      <>
+        <div className="content-head">
+          <div className="crumb"><Skeleton w={22} h={22} r={6} /><Skeleton w={140} h={14} /></div>
+        </div>
+        <div className="board-wrap">
+          <div className="board">
+            {[0, 1, 2, 3].map((c) => (
+              <div className="col" key={c}>
+                <div className="col-head"><Skeleton w={90} h={12} /></div>
+                <div className="col-body">
+                  {Array.from({ length: 3 - (c % 2) }).map((_, i) => (
+                    <div className="task-card" key={i} style={{ cursor: 'default' }}>
+                      <div className="card-in">
+                        <Skeleton h={13} style={{ marginBottom: 10 }} />
+                        <Skeleton w="60%" h={11} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
