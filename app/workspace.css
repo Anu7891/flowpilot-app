@@ -63,7 +63,7 @@
 }
 .pg-ws .ws-item:hover{background:var(--bg-subtle)}
 .pg-ws .ws-item.active{background:var(--primary-50)}
-.pg-ws .ws-item .meta{min-width:0}
+.pg-ws .ws-item .meta{min-width:0; display:flex; flex-direction:column}
 .pg-ws .ws-item .meta .nm{font-size:14px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .pg-ws .ws-item .meta .rl{font-size:12px; color:var(--text-3); text-transform:capitalize}
 .pg-ws .ws-item .tick{margin-left:auto; color:var(--primary)}
@@ -78,7 +78,7 @@
 .pg-ws .switcher-empty{padding:14px 10px; text-align:center; color:var(--text-3); font-size:13px}
 
 /* ---------- Page layout ---------- */
-.pg-ws .page{max-width:920px; margin:0 auto; padding:var(--s-4) var(--s-3) var(--s-8)}
+.pg-ws .page{max-width:1080px; margin:0 auto; padding:var(--s-4) var(--s-3) var(--s-8)}
 .pg-ws .page-head{margin-bottom:var(--s-3)}
 .pg-ws .page-head h1{font-size:22px; line-height:28px; font-weight:700; margin:0 0 4px}
 .pg-ws .page-head p{color:var(--text-2); margin:0; font-size:14px}

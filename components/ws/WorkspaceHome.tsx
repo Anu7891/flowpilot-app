@@ -7,10 +7,10 @@ import { Icon, initials, useToast } from './ui';
 import Tour, { type TourStep } from './Tour';
 
 const TOUR_STEPS: TourStep[] = [
-  { anchor: 'switcher', title: 'Your workspace', body: 'Har workspace apni team, projects aur settings rakhta hai. Yahan se switch karo ya naya banao.' },
-  { anchor: 'projects', title: 'Projects & boards', body: 'Aapke saare projects yahan. Har project ka apna Kanban board hota hai jahan tasks drag-drop se move hote hain.' },
-  { anchor: 'new-project', title: 'Start a project', body: 'Naya project banao, phir board me tasks add karke priority, assignee aur due date set karo.' },
-  { anchor: 'settings', title: 'Team & settings', body: 'Members invite karo, roles do, aur workspace settings yahan se manage karo.' },
+  { anchor: 'switcher', title: 'Your workspace', body: 'Each workspace holds its own team, projects, and settings. Switch between them or create a new one from here.' },
+  { anchor: 'projects', title: 'Projects & boards', body: 'All your projects live here. Every project gets its own Kanban board where tasks move by drag and drop.' },
+  { anchor: 'new-project', title: 'Start a project', body: 'Create a project, then add tasks on the board and set their priority, assignee, and due date.' },
+  { anchor: 'settings', title: 'Team & settings', body: 'Invite members, assign roles, and manage workspace settings from here.' },
 ];
 
 function greeting() {
@@ -142,7 +142,7 @@ export default function WorkspaceHome({ slug }: { slug: string }) {
         {/* Getting started card */}
         <div className="card">
           <h3>Getting started</h3>
-          <p className="sub">FlowPilot ka pura flow 30 second me samjho.</p>
+          <p className="sub">Get the hang of FlowPilot in about 30 seconds.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => setTour(true)}><Icon name="i-info" /> Take the guided tour</button>
             <button className="btn btn-secondary btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => { setCreating(true); setPName(''); setPIcon(''); }}><Icon name="i-plus" /> Create a project</button>
