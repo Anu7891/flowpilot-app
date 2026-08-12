@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { type Member, type Role } from '../api';
 import { useMembers, useChangeMemberRole, useRemoveMember } from '../hooks';
+import Modal from '../Modal';
 import { Icon, initials, timeAgo, fmtDate, useToast } from '../ui';
 
 const ASSIGNABLE: Role[] = ['ADMIN', 'MEMBER', 'GUEST'];
@@ -105,18 +106,16 @@ export default function MembersTab({ slug, myRole }: { slug: string; myRole: Rol
       </div>
 
       {confirmRemove && (
-        <div className="modal-scrim" onClick={() => setConfirmRemove(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Remove {confirmRemove.user.name}?</h3>
-            <p>They’ll immediately lose access to this workspace. This can’t be undone, but you can re-invite them later.</p>
-            <div className="card-actions">
-              <button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button>
-              <button className="btn btn-danger" disabled={busy === confirmRemove.user.id} onClick={() => remove(confirmRemove)}>
-                {busy === confirmRemove.user.id ? <><span className="spinner" /> Removing…</> : 'Remove member'}
-              </button>
-            </div>
+        <Modal onClose={() => setConfirmRemove(null)} labelledBy="rm-title">
+          <h3 id="rm-title">Remove {confirmRemove.user.name}?</h3>
+          <p>They’ll immediately lose access to this workspace. This can’t be undone, but you can re-invite them later.</p>
+          <div className="card-actions">
+            <button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button>
+            <button className="btn btn-danger" disabled={busy === confirmRemove.user.id} onClick={() => remove(confirmRemove)}>
+              {busy === confirmRemove.user.id ? <><span className="spinner" /> Removing…</> : 'Remove member'}
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -97,7 +97,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; background: var(--bg-app); color: var(--text-1); }
 [hidden] { display: none !important; }
 :focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--r-sm); }
 .pg-ds, .pg-landing, .pg-flow { min-height: 100vh; }

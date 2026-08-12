@@ -1,6 +1,7 @@
 'use client';
 import { useRouter, usePathname } from 'next/navigation';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
+import ThemeToggle from './ThemeToggle';
 import { Icon } from './ui';
 import { useProjects } from './hooks';
 
@@ -44,6 +45,7 @@ export default function Sidebar({ slug }: { slug: string }) {
       </nav>
 
       <div className="side-bottom">
+        <ThemeToggle />
         <button className="side-link" data-tour="settings" onClick={() => router.push(`/w/${slug}/settings`)}><Icon name="i-settings" /> Settings</button>
       </div>
     </aside>
